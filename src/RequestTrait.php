@@ -1,5 +1,5 @@
 <?php
-namespace App\Lib;
+namespace Muvon\KISS;
 
 use Throwable;
 
