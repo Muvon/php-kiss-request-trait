@@ -87,8 +87,6 @@ trait RequestTrait {
     $result = [];
     foreach ($this->request_handlers as $ch) {
       [$err, $resp] = $this->process($ch);
-      curl_multi_remove_handle($this->request_mh, $ch);
-      curl_close($ch);
       if ($err) {
         throw new Error('One of the requests has response error: ' . $err);
       }
@@ -132,6 +130,10 @@ trait RequestTrait {
       return [null, $this->request_json ? json_decode($response, true) : $response];
     } catch (Throwable $T) {
       return ['e_request_failed', $T->getMessage()];
+    } finally {
+      if ($this->request_mh) {
+        curl_multi_remove_handle($this->request_mh, $ch);
+      }
     }
   }
 }
