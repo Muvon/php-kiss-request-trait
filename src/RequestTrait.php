@@ -112,11 +112,11 @@ trait RequestTrait {
           28 => 'e_request_timedout',
           52 => 'e_request_got_nothing',
           default => 'e_request_failed',
-        }, $err_code . ': ' . curl_error($ch)];
+        }, 'CURL ' . $err_code . ': ' . curl_error($ch)];
       }
       $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
       if (($httpcode !== 200 && $httpcode !== 201)) {
-        return ['e_request_failed', null];
+        return ['e_request_failed', 'HTTP ' . $httpcode . ': ' . $response];
       }
 
       if (!$response) {
