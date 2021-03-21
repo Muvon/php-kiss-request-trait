@@ -44,7 +44,7 @@ final class RequestTest extends TestCase {
   public function testUnavailableUrlRerturnsError() {
     [$err, $res] = $this->Client->run('undefined');
     $this->assertEquals('e_request_failed', $err);
-    $this->assertEquals('6: Could not resolve host: undefined', $res);
+    $this->assertEquals('CURL 6: Could not resolve host: undefined', $res);
   }
 
   public function testRequestGoogleSucceed() {
