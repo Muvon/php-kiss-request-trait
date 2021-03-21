@@ -104,9 +104,12 @@ trait RequestTrait {
       $response = $fetch_fn($ch);
       $err_code = curl_errno($ch);
       if ($err_code) {
+        // https://curl.se/libcurl/c/libcurl-errors.html
         return [match ($err_code) {
-          CURLE_COULDNT_CONNECT => 'e_request_refused',
-          CURLE_OPERATION_TIMEDOUT => 'e_request_timedout',
+          7 => 'e_request_refused',
+          9 => 'e_request_access_denied',
+          28 => 'e_request_timedout',
+          52 => 'e_request_got_nothing',
           default => 'e_request_failed',
         }, $err_code . ': ' . curl_error($ch)];
       }
