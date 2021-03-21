@@ -9,6 +9,7 @@ use CurlMultiHandle;
 trait RequestTrait {
   protected int $request_connect_timeout = 5;
   protected int $request_timeout = 12;
+  protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
   protected bool $request_json = true;
   protected array $request_handlers = [];
@@ -46,7 +47,7 @@ trait RequestTrait {
       array_push($headers, 'Content-type: application/json', 'Accept: application/json');
     }
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->request_ssl_verify);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->request_connect_timeout);
     curl_setopt($ch, CURLOPT_TIMEOUT, $this->request_timeout);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
