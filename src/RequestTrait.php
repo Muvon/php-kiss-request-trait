@@ -39,7 +39,7 @@ trait RequestTrait {
       $get_params = array_merge($get_params, $payload);
     }
 
-    $url .= '?' . http_build_query($get_params, false, '&');
+    $url .= $get_params ? '?' . http_build_query($get_params, false, '&') : '';
     $ch = curl_init($url);
 
     if ($this->request_json) {
