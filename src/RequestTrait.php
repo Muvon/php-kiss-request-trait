@@ -94,6 +94,7 @@ trait RequestTrait {
     }
     curl_multi_close($this->request_mh);
     unset($this->request_handlers);
+    $this->request_handlers = [];
     $this->request_mh = null;
 
     return $result;
@@ -115,6 +116,10 @@ trait RequestTrait {
         }, 'CURL ' . $err_code . ': ' . curl_error($ch)];
       }
       $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+      if ($this->request_mh) {
+        curl_multi_remove_handle($this->request_mh, $ch);
+      }
+      curl_close($ch);
       if (($httpcode !== 200 && $httpcode !== 201)) {
         return ['e_request_failed', 'HTTP ' . $httpcode . ': ' . $response];
       }
@@ -130,10 +135,6 @@ trait RequestTrait {
       return [null, $this->request_json ? json_decode($response, true) : $response];
     } catch (Throwable $T) {
       return ['e_request_failed', $T->getMessage()];
-    } finally {
-      if ($this->request_mh) {
-        curl_multi_remove_handle($this->request_mh, $ch);
-      }
     }
   }
 }
