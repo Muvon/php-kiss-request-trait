@@ -100,25 +100,19 @@ trait RequestTrait {
 
   private function process(CurlHandle $ch): array {
     try {
-      $err_code = curl_error($ch);
-      if ($err_code) {
-        switch ($err_code) {
-          case 28:
-            $err = 'e_request_timedout';
-            break;
-          default:
-            $err = 'e_request_failed';
-            break;
-        }
-        return [$err, false];
-      }
-
       $fetch_fn = $this->request_mh ? 'curl_multi_getcontent' : 'curl_exec';
       $response = $fetch_fn($ch);
+      $err_code = curl_errno($ch);
+      if ($err_code) {
+        return [match ($err_code) {
+          7 => 'e_request_refused',
+          28 => 'e_request_timedout',
+          default => 'e_request_failed',
+        }, curl_error($ch)];
+      }
       $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-      curl_close($ch);
       if (($httpcode !== 200 && $httpcode !== 201)) {
-        return ['e_request_failed', $response];
+        return ['e_request_failed', null];
       }
 
       if (!$response) {
