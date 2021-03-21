@@ -105,10 +105,10 @@ trait RequestTrait {
       $err_code = curl_errno($ch);
       if ($err_code) {
         return [match ($err_code) {
-          7 => 'e_request_refused',
-          28 => 'e_request_timedout',
+          CURLE_COULDNT_CONNECT => 'e_request_refused',
+          CURLE_OPERATION_TIMEDOUT => 'e_request_timedout',
           default => 'e_request_failed',
-        }, curl_error($ch)];
+        }, $err_code . ': ' . curl_error($ch)];
       }
       $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
       if (($httpcode !== 200 && $httpcode !== 201)) {
