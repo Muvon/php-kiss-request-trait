@@ -132,7 +132,11 @@ trait RequestTrait {
         // This hack is needed to prevent converting numbers like 1.3 to 1.2999999999 cuz PHP is shit in this case
         $response = preg_replace('/"\s*:\s*([0-9]+\.[0-9]+)/ius', '":"$1"', $response);
       }
-      return [null, $this->request_json ? json_decode($response, true) : $response];
+      $decoded = $this->request_json ? json_decode($response, true) : $response;
+      if (false === $decoded) {
+        throw new Error('Error while decoding response. Check timeouts');
+      }
+      return [null, $decoded];
     } catch (Throwable $T) {
       return ['e_request_failed', $T->getMessage()];
     }
