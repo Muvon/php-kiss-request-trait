@@ -125,7 +125,7 @@ trait RequestTrait {
       }
 
       if (!$response) {
-        return ['e_request_response_empty', $response];
+        return ['e_response_empty', $response];
       }
 
       if ($this->request_json) {
@@ -134,7 +134,7 @@ trait RequestTrait {
       }
       $decoded = $this->request_json ? json_decode($response, true) : $response;
       if (false === $decoded) {
-        throw new Error('Error while decoding response. Check timeouts');
+        return ['e_response_json_error', null];
       }
       return [null, $decoded];
     } catch (Throwable $T) {
