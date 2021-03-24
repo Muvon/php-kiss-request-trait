@@ -66,9 +66,11 @@ final class RequestTest extends TestCase {
       ['https://www.google.com', [], 'GET'],
       ['https://yandex.ru', [], 'GET'],
     ]);
-
-    $this->assertIsScalar($responses[0]);
-    $this->assertIsString($responses[1]);
-    $this->assertNotEquals($responses[0], $responses[1]);
+    $this->assertEquals(2, sizeof($responses));
+    $this->assertEquals(null, $responses[0][0]);
+    $this->assertEquals(null, $responses[1][0]);
+    $this->assertIsString($responses[0][1]);
+    $this->assertIsString($responses[1][1]);
+    $this->assertNotEquals($responses[0][1], $responses[1][1]);
   }
 }
