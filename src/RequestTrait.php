@@ -35,12 +35,11 @@ trait RequestTrait {
    * @return self|array in case multi() mode reqturns self otherswise array
    */
   protected function request(string $url, array $payload = [], string $method = 'POST', array $headers = []): self|array {
-    $get_params = [];
-    if ($method === 'GET') {
-      $get_params = array_merge($get_params, $payload);
+
+    if ($method === 'GET' && $payload) {
+      $url = rtrim($url, '?') . '?' . http_build_query($payload, false, '&');
     }
 
-    $url .= $get_params ? '?' . http_build_query($get_params, false, '&') : '';
     $ch = curl_init($url);
 
     if ($this->request_json) {
