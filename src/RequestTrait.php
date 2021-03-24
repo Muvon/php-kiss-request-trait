@@ -45,17 +45,23 @@ trait RequestTrait {
     if ($this->request_json) {
       array_push($headers, 'Content-type: application/json', 'Accept: application/json');
     }
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $this->request_ssl_verify);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->request_connect_timeout);
-    curl_setopt($ch, CURLOPT_TIMEOUT, $this->request_timeout);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_ACCEPT_ENCODING, '');
-    curl_setopt($ch, CURLOPT_TCP_KEEPALIVE, $this->request_keepalive);
+
+    $opts = [
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_SSL_VERIFYPEER => $this->request_ssl_verify,
+      CURLOPT_CONNECTTIMEOUT => $this->request_connect_timeout,
+      CURLOPT_TIMEOUT => $this->request_timeout,
+      CURLOPT_HTTPHEADER => $headers,
+      CURLOPT_ACCEPT_ENCODING => '',
+      CURLOPT_TCP_KEEPALIVE => $this->request_keepalive,
+    ];
     if ($method === 'POST') {
-      curl_setopt($ch, CURLOPT_POST, 1);
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $this->request_json ? json_encode($payload) : http_build_query($payload, false, '&'));
+      $opts[CURLOPT_POST] = 1;
+      $opts[CURLOPT_POSTFIELDS] = $this->request_json ? json_encode($payload) : http_build_query($payload, false, '&');
     }
+
+    curl_setopt_array($ch, $opts);
+    unset($opts);
     if ($this->request_mh) {
       $this->request_handlers[] = $ch;
       curl_multi_add_handle($this->request_mh, $ch);
