@@ -76,7 +76,7 @@ trait RequestTrait {
    * If we call this methods without multi it throws Exception
    * In case if one or more responses failed it throws Exception
    *
-   * @return array
+   * @return array list of results with structure same as single request
    */
   protected function exec(): array {
     if (!$this->request_mh) {
@@ -91,11 +91,7 @@ trait RequestTrait {
 
     $result = [];
     foreach ($this->request_handlers as $ch) {
-      [$err, $resp] = $this->process($ch);
-      if ($err) {
-        throw new Error('One of the requests has response error: ' . $err);
-      }
-      $result[] = $resp;
+      $result[] = $this->process($ch);
     }
     curl_multi_close($this->request_mh);
     unset($this->request_handlers);
