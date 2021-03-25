@@ -11,7 +11,8 @@ trait RequestTrait {
   protected int $request_timeout = 12;
   protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
-  protected string $request_accept_encoding = 'gzip, deflate';
+  // The contents of the "Accept-Encoding: " header. This enables decoding of the response. Supported encodings are "identity", "deflate", and "gzip". If an empty string, "", is set, a header containing all supported encoding types is sent.
+  protected ?string $request_encoding = '';
   protected bool $request_json = true;
   protected array $request_handlers = [];
   protected ?CurlMultiHandle $request_mh = null;
@@ -53,7 +54,7 @@ trait RequestTrait {
       CURLOPT_CONNECTTIMEOUT => $this->request_connect_timeout,
       CURLOPT_TIMEOUT => $this->request_timeout,
       CURLOPT_HTTPHEADER => $headers,
-      CURLOPT_ACCEPT_ENCODING => $this->request_accept_encoding,
+      CURLOPT_ENCODING => $this->request_encoding,
       CURLOPT_TCP_KEEPALIVE => $this->request_keepalive,
     ];
     if ($method === 'POST') {
