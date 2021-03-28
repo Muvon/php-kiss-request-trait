@@ -8,7 +8,7 @@ use CurlMultiHandle;
 
 trait RequestTrait {
   protected int $request_connect_timeout = 5;
-  protected int $request_timeout = 12;
+  protected int $request_timeout = 30;
   protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
 
