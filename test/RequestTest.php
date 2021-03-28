@@ -6,8 +6,8 @@ use Muvon\KISS\RequestTrait;
 final class Request {
   use RequestTrait;
 
-  public function setRequestJson(bool $value): self {
-    $this->request_json = $value;
+  public function setRequestType(string $value): self {
+    $this->request_type = $value;
     return $this;
   }
 
@@ -48,20 +48,17 @@ final class RequestTest extends TestCase {
   }
 
   public function testRequestGoogleSucceed() {
-    $this->Client->setRequestJson(false);
     [$err, $res] = $this->Client->run('https://www.google.com/', [], 'GET');
     $this->assertEquals(null, $err);
     $this->assertIsString($res);
   }
 
   public function testWeDoNotFollowRedirects() {
-    $this->Client->setRequestJson(false);
     [$err, $res] = $this->Client->run('https://google.com', [], 'GET');
     $this->assertEquals('e_request_failed', $err);
   }
 
   public function testRequestMultiSucceed() {
-    $this->Client->setRequestJson(false);
     $responses = $this->Client->runMulti([
       ['https://www.google.com', [], 'GET'],
       ['https://yandex.ru', [], 'GET'],

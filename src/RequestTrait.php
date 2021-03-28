@@ -11,9 +11,14 @@ trait RequestTrait {
   protected int $request_timeout = 12;
   protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
+
   // The contents of the "Accept-Encoding: " header. This enables decoding of the response. Supported encodings are "identity", "deflate", and "gzip". If an empty string, "", is set, a header containing all supported encoding types is sent.
   protected ?string $request_encoding = '';
-  protected bool $request_json = true;
+
+  // Type of the request can be one of json, msgpack, raw
+  // In case if not supported we use raw
+  protected string $request_type = 'raw';
+
   protected array $request_handlers = [];
   protected ?CurlMultiHandle $request_mh = null;
 
@@ -44,9 +49,11 @@ trait RequestTrait {
 
     $ch = curl_init($url);
 
-    if ($this->request_json) {
-      array_push($headers, 'Content-type: application/json', 'Accept: application/json');
-    }
+    match ($this->request_type) {
+      'msgpack' => array_push($headers, 'Content-type: application/msgpack', 'Accept: application/msgpack'),
+      'json' => array_push($headers, 'Content-type: application/json', 'Accept: application/json'),
+      default => null,
+    };
 
     $opts = [
       CURLOPT_RETURNTRANSFER => 1,
@@ -59,7 +66,7 @@ trait RequestTrait {
     ];
     if ($method === 'POST') {
       $opts[CURLOPT_POST] = 1;
-      $opts[CURLOPT_POSTFIELDS] = $this->request_json ? json_encode($payload) : http_build_query($payload, false, '&');
+      $opts[CURLOPT_POSTFIELDS] = $this->requestEncode($payload);
     }
 
     curl_setopt_array($ch, $opts);
@@ -131,17 +138,45 @@ trait RequestTrait {
         return ['e_response_empty', $response];
       }
 
-      if ($this->request_json) {
-        // This hack is needed to prevent converting numbers like 1.3 to 1.2999999999 cuz PHP is shit in this case
+      // This hack is needed to prevent converting numbers like 1.3 to 1.2999999999 cuz PHP is shit in this case
+      if ($this->request_type === 'json') {
         $response = preg_replace('/"\s*:\s*([0-9]+\.[0-9]+)/ius', '":"$1"', $response);
       }
-      $decoded = $this->request_json ? json_decode($response, true) : $response;
+      $decoded = $this->requestDecode($response);
       if (false === $decoded) {
-        return ['e_response_json_error', null];
+        return ['e_response_decode_failed', null];
       }
       return [null, $decoded];
     } catch (Throwable $T) {
       return ['e_request_failed', $T->getMessage()];
     }
+  }
+
+  /**
+   * Encode request depends on type of it
+   *
+   * @param array $payload
+   * @return string encoded string to pass to post data
+   */
+  protected function requestEncode(array $payload): string {
+    return match ($this->request_type) {
+      'msgpack' => msgpack_pack($payload),
+      'json' => json_encode($payload),
+      default => http_build_query($payload, false, '&'),
+    };
+  }
+
+  /**
+   * Decode response based on current request type
+   *
+   * @param string $response
+   * @return mixed
+   */
+  protected function requestDecode(string $response): mixed {
+    return match ($this->request_type) {
+      'msgpack' => msgpack_unpack($response),
+      'json' => json_decode($response, true),
+      default => $response,
+    };
   }
 }
