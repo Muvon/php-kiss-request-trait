@@ -25,5 +25,8 @@
     "psr-4": {
       "Muvon\\KISS\\": "src/"
     }
+  },
+  "require": {
+    "muvon/kiss-binary-codec": "^0.2.0"
   }
 }

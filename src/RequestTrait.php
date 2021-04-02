@@ -15,7 +15,7 @@ trait RequestTrait {
   // The contents of the "Accept-Encoding: " header. This enables decoding of the response. Supported encodings are "identity", "deflate", and "gzip". If an empty string, "", is set, a header containing all supported encoding types is sent.
   protected ?string $request_encoding = '';
 
-  // Type of the request can be one of json, msgpack, raw
+  // Type of the request can be one of json, msgpack, binary, raw
   // In case if not supported we use raw
   protected string $request_type = 'raw';
 
@@ -52,6 +52,7 @@ trait RequestTrait {
     match ($this->request_type) {
       'msgpack' => array_push($headers, 'Content-type: application/msgpack', 'Accept: application/msgpack'),
       'json' => array_push($headers, 'Content-type: application/json', 'Accept: application/json'),
+      'binary' => array_push($headers, 'Content-type: application/binary', 'Accept: application/binary'),
       default => null,
     };
 
@@ -138,10 +139,6 @@ trait RequestTrait {
         return ['e_response_empty', $response];
       }
 
-      // This hack is needed to prevent converting numbers like 1.3 to 1.2999999999 cuz PHP is shit in this case
-      if ($this->request_type === 'json') {
-        $response = preg_replace('/"\s*:\s*([0-9]+\.[0-9]+)/ius', '":"$1"', $response);
-      }
       $decoded = $this->requestDecode($response);
       if (false === $decoded) {
         return ['e_response_decode_failed', null];
@@ -162,6 +159,7 @@ trait RequestTrait {
     return match ($this->request_type) {
       'msgpack' => msgpack_pack($payload),
       'json' => json_encode($payload),
+      'binary' => BinaryCodec::create()->pack($payload),
       default => http_build_query($payload, false, '&'),
     };
   }
@@ -175,7 +173,9 @@ trait RequestTrait {
   protected function requestDecode(string $response): mixed {
     return match ($this->request_type) {
       'msgpack' => msgpack_unpack($response),
-      'json' => json_decode($response, true),
+      // This hack is needed to prevent converting numbers like 1.3 to 1.2999999999 cuz PHP is shit in this case
+      'json' => json_decode($response = preg_replace('/"\s*:\s*([0-9]+\.[0-9]+)/ius', '":"$1"', $response), true),
+      'binary' => BinaryCodec::create()->unpack($response),
       default => $response,
     };
   }
