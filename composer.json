@@ -27,6 +27,6 @@
     }
   },
   "require": {
-    "muvon/kiss-binary-codec": "^0.2.0"
+    "muvon/kiss-binary-codec": "^0.3.0"
   }
 }

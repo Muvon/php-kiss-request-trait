@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "449d6102ac491b97432e3b8afc4e5f76",
+    "content-hash": "f7c68a623d953a72d6e332f09090ce0f",
     "packages": [
         {
             "name": "muvon/kiss-binary-codec",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Muvon/php-kiss-binary-codec.git",
-                "reference": "17a0f9020644c2a45e4218823a3e97d71874c7ff"
+                "reference": "189ec1d878764763ebba84bf22ac134c7355eb86"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Muvon/php-kiss-binary-codec/zipball/17a0f9020644c2a45e4218823a3e97d71874c7ff",
-                "reference": "17a0f9020644c2a45e4218823a3e97d71874c7ff",
+                "url": "https://api.github.com/repos/Muvon/php-kiss-binary-codec/zipball/189ec1d878764763ebba84bf22ac134c7355eb86",
+                "reference": "189ec1d878764763ebba84bf22ac134c7355eb86",
                 "shasum": ""
             },
             "require-dev": {
@@ -27,7 +27,10 @@
             "autoload": {
                 "psr-4": {
                     "Muvon\\KISS\\": "src/"
-                }
+                },
+                "files": [
+                    "src/functions.php"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -50,9 +53,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Muvon/php-kiss-binary-codec/issues",
-                "source": "https://github.com/Muvon/php-kiss-binary-codec/tree/0.2.0"
+                "source": "https://github.com/Muvon/php-kiss-binary-codec/tree/0.3.0"
             },
-            "time": "2021-04-02T02:39:54+00:00"
+            "time": "2021-04-04T12:25:06+00:00"
         }
     ],
     "packages-dev": [
