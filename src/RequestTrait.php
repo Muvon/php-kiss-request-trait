@@ -132,7 +132,22 @@ trait RequestTrait {
       }
       curl_close($ch);
       if (($httpcode !== 200 && $httpcode !== 201)) {
-        return ['e_request_failed', 'HTTP ' . $httpcode . ': ' . $response];
+        return [match($httpcode) {
+          429 => 'e_http_too_many_request',
+          400 => 'e_http_bad_request',
+          401 => 'e_http_unathorized',
+          403 => 'e_http_forbidden',
+          404 => 'e_http_not_found',
+          405 => 'e_http_method_not_allowed',
+          413 => 'e_http_payload_too_large',
+          414 => 'e_http_not_found',
+          500 => 'e_http_server_error',
+          501 => 'e_http_not_implemented',
+          502 => 'e_http_bad_gateway',
+          503 => 'e_http_service_unavailable',
+          504 => 'e_http_gateway_timeout',
+          default => 'e_request_failed',
+        }, 'HTTP ' . $httpcode . ': ' . $response];
       }
 
       if (!$response) {
