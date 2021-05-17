@@ -11,6 +11,7 @@ trait RequestTrait {
   protected int $request_timeout = 30;
   protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
+  protected string $request_useragent = 'KISS/Request v0.8.0';
 
   // The contents of the "Accept-Encoding: " header. This enables decoding of the response. Supported encodings are "identity", "deflate", and "gzip". If an empty string, "", is set, a header containing all supported encoding types is sent.
   protected ?string $request_encoding = '';
@@ -68,6 +69,7 @@ trait RequestTrait {
       CURLOPT_HTTPHEADER => $headers,
       CURLOPT_ENCODING => $this->request_encoding,
       CURLOPT_TCP_KEEPALIVE => $this->request_keepalive,
+      CURLOPT_USERAGENT => $this->request_useragent,
     ];
 
     if ($this->request_proxy) {
