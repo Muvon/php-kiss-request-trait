@@ -11,7 +11,7 @@ trait RequestTrait {
   protected int $request_timeout = 30;
   protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
-  protected string $request_useragent = 'KISS/Request v0.8.0';
+  protected string $request_useragent = 'KISS/Request v0.8.1';
 
   // The contents of the "Accept-Encoding: " header. This enables decoding of the response. Supported encodings are "identity", "deflate", and "gzip". If an empty string, "", is set, a header containing all supported encoding types is sent.
   protected ?string $request_encoding = '';
@@ -23,6 +23,8 @@ trait RequestTrait {
   // Array containing proxy info with next fields
   // { host, port, user, password, type }
   protected array $request_proxy = [];
+
+  protected array $request_json_bigint_keys = [];
 
   protected array $request_handlers = [];
   protected ?CurlMultiHandle $request_mh = null;
@@ -192,7 +194,7 @@ trait RequestTrait {
   protected function requestEncode(array $payload): string {
     return match ($this->request_type) {
       'msgpack' => msgpack_pack($payload),
-      'json' => json_encode($payload),
+      'json' => $this->encodeJson($payload),
       'binary' => BinaryCodec::create()->pack($payload),
       default => http_build_query($payload, false, '&'),
     };
@@ -212,5 +214,14 @@ trait RequestTrait {
       'binary' => BinaryCodec::create()->unpack($response),
       default => $response,
     };
+  }
+
+  protected function encodeJson(mixed $data): string {
+    $json = json_encode($data);
+    if ($this->request_json_bigint_keys) {
+      $json = preg_replace('/"(' . implode('|', $this->request_json_bigint_keys) . ')":"([0-9]+)"/ius', '"$1":$2', $json);
+    }
+
+    return $json;
   }
 }
