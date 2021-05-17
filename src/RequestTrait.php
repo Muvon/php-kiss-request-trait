@@ -19,6 +19,10 @@ trait RequestTrait {
   // In case if not supported we use raw
   protected string $request_type = 'raw';
 
+  // Array containing proxy info with next fields
+  // { host, port, user, password, type }
+  protected array $request_proxy = [];
+
   protected array $request_handlers = [];
   protected ?CurlMultiHandle $request_mh = null;
 
@@ -65,6 +69,19 @@ trait RequestTrait {
       CURLOPT_ENCODING => $this->request_encoding,
       CURLOPT_TCP_KEEPALIVE => $this->request_keepalive,
     ];
+
+    if ($this->request_proxy) {
+      $opts[CURLOPT_PROXY] = $this->request_proxy['host'] . ':' . $this->request_proxy['port'];
+      if (isset($this->request_proxy['user'])) {
+        $opts[CURLOPT_PROXYUSERPWD] = $this->request_proxy['user'] . ':' . $this->request_proxy['password'];
+      }
+      $opts[CURLOPT_PROXYTYPE] = match ($this->request_proxy['type'] ?? 'http') {
+        'socks4' => CURLPROXY_SOCKS4,
+        'socks5' => CURLPROXY_SOCKS5,
+        default => CURLPROXY_HTTP,
+      };
+    }
+
     if ($method === 'POST') {
       $opts[CURLOPT_POST] = 1;
       $opts[CURLOPT_POSTFIELDS] = $this->requestEncode($payload);
