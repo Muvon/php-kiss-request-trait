@@ -60,14 +60,18 @@ final class RequestTest extends TestCase {
 
   public function testRequestMultiSucceed() {
     $responses = $this->Client->runMulti([
-      ['https://www.google.com', [], 'GET'],
-      ['https://yandex.ru', [], 'GET'],
+      ['https://www.yahoo.com', [], 'GET'],
+      ['https://bitclout.com', [], 'GET'],
+      ['https://www.binance.com/en', [], 'GET'],
     ]);
-    $this->assertEquals(2, sizeof($responses));
+    $this->assertEquals(3, sizeof($responses));
     $this->assertEquals(null, $responses[0][0]);
     $this->assertEquals(null, $responses[1][0]);
+    $this->assertEquals(null, $responses[2][0]);
     $this->assertIsString($responses[0][1]);
     $this->assertIsString($responses[1][1]);
+    $this->assertIsString($responses[2][1]);
     $this->assertNotEquals($responses[0][1], $responses[1][1]);
+    $this->assertNotEquals($responses[0][1], $responses[2][1]);
   }
 }

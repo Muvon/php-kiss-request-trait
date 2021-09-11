@@ -11,7 +11,8 @@ trait RequestTrait {
   protected int $request_timeout = 30;
   protected int $request_ssl_verify = 0;
   protected int $request_keepalive = 20;
-  protected string $request_useragent = 'KISS/Request v0.8.1';
+
+  protected string $request_useragent = 'KISS/Request v0.10.0';
 
   // The contents of the "Accept-Encoding: " header. This enables decoding of the response. Supported encodings are "identity", "deflate", and "gzip". If an empty string, "", is set, a header containing all supported encoding types is sent.
   protected ?string $request_encoding = '';
@@ -27,7 +28,10 @@ trait RequestTrait {
   protected array $request_json_bigint_keys = [];
 
   protected array $request_handlers = [];
-  protected ?CurlMultiHandle $request_mh = null;
+  
+  protected bool $curl_reuse = false;
+  protected ?CurlHandle $ch = null;
+  protected ?CurlMultiHandle $mh = null;
 
   /**
    * Run multi model
@@ -35,7 +39,9 @@ trait RequestTrait {
    * @return self
    */
   protected function multi(): self {
-    $this->request_mh = curl_multi_init();
+    if (!$this->curl_reuse || !$this->mh) {
+      $this->mh = curl_multi_init();
+    }
     return $this;
   }
 
@@ -54,25 +60,30 @@ trait RequestTrait {
       $url = rtrim($url, '?') . '?' . http_build_query($payload, false, '&');
     }
 
-    $ch = curl_init($url);
+    $opts = [];
+    if (!$this->curl_reuse || !$this->ch) {
+      $this->ch = curl_init();
 
-    match ($this->request_type) {
-      'msgpack' => array_push($headers, 'Content-type: application/msgpack', 'Accept: application/msgpack'),
-      'json' => array_push($headers, 'Content-type: application/json', 'Accept: application/json'),
-      'binary' => array_push($headers, 'Content-type: application/binary', 'Accept: application/binary'),
-      default => null,
-    };
+      match ($this->request_type) {
+        'msgpack' => array_push($headers, 'Content-type: application/msgpack', 'Accept: application/msgpack'),
+        'json' => array_push($headers, 'Content-type: application/json', 'Accept: application/json'),
+        'binary' => array_push($headers, 'Content-type: application/binary', 'Accept: application/binary'),
+        default => null,
+      };
 
-    $opts = [
-      CURLOPT_RETURNTRANSFER => 1,
-      CURLOPT_SSL_VERIFYPEER => $this->request_ssl_verify,
-      CURLOPT_CONNECTTIMEOUT => $this->request_connect_timeout,
-      CURLOPT_TIMEOUT => $this->request_timeout,
-      CURLOPT_HTTPHEADER => $headers,
-      CURLOPT_ENCODING => $this->request_encoding,
-      CURLOPT_TCP_KEEPALIVE => $this->request_keepalive,
-      CURLOPT_USERAGENT => $this->request_useragent,
-    ];
+      $opts = [
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_SSL_VERIFYPEER => $this->request_ssl_verify,
+        CURLOPT_CONNECTTIMEOUT => $this->request_connect_timeout,
+        CURLOPT_TIMEOUT => $this->request_timeout,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_ENCODING => $this->request_encoding,
+        CURLOPT_TCP_KEEPALIVE => $this->request_keepalive,
+        CURLOPT_USERAGENT => $this->request_useragent,
+      ];
+    }
+
+    $opts[CURLOPT_URL] = $url;
 
     if ($this->request_proxy) {
       $opts[CURLOPT_PROXY] = $this->request_proxy['host'] . ':' . $this->request_proxy['port'];
@@ -89,17 +100,19 @@ trait RequestTrait {
     if ($method === 'POST') {
       $opts[CURLOPT_POST] = 1;
       $opts[CURLOPT_POSTFIELDS] = $this->requestEncode($payload);
+    } else {
+      $opts[CURLOPT_HTTPGET] = 1;
     }
 
-    curl_setopt_array($ch, $opts);
+    curl_setopt_array($this->ch, $opts);
     unset($opts);
-    if ($this->request_mh) {
-      $this->request_handlers[] = $ch;
-      curl_multi_add_handle($this->request_mh, $ch);
+    if ($this->mh) {
+      $this->request_handlers[] = $this->ch;
+      curl_multi_add_handle($this->mh, $this->ch);
       return $this;
     }
 
-    return $this->process($ch);
+    return $this->process($this->ch);
   }
 
   /**
@@ -110,13 +123,13 @@ trait RequestTrait {
    * @return array list of results with structure same as single request
    */
   protected function exec(): array {
-    if (!$this->request_mh) {
+    if (!$this->mh) {
       throw new Error('Trying to exec request that ws not inited');
     }
     do {
-      $status = curl_multi_exec($this->request_mh, $active);
+      $status = curl_multi_exec($this->mh, $active);
       if ($active) {
-        curl_multi_select($this->request_mh);
+        curl_multi_select($this->mh);
       }
     } while ($active && $status == CURLM_OK);
 
@@ -124,17 +137,17 @@ trait RequestTrait {
     foreach ($this->request_handlers as $ch) {
       $result[] = $this->process($ch);
     }
-    curl_multi_close($this->request_mh);
+    curl_multi_close($this->mh);
     unset($this->request_handlers);
     $this->request_handlers = [];
-    $this->request_mh = null;
+    $this->mh = null;
 
     return $result;
   }
 
   private function process(CurlHandle $ch): array {
     try {
-      $fetch_fn = $this->request_mh ? 'curl_multi_getcontent' : 'curl_exec';
+      $fetch_fn = $this->mh ? 'curl_multi_getcontent' : 'curl_exec';
       $response = $fetch_fn($ch);
       $err_code = curl_errno($ch);
       if ($err_code) {
@@ -148,10 +161,12 @@ trait RequestTrait {
         }, 'CURL ' . $err_code . ': ' . curl_error($ch)];
       }
       $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-      if ($this->request_mh) {
-        curl_multi_remove_handle($this->request_mh, $ch);
+      if ($this->mh) {
+        curl_multi_remove_handle($this->mh, $ch);
       }
-      curl_close($ch);
+      if (!$this->curl_reuse || $this->mh) {
+        curl_close($ch);
+      } 
       if (($httpcode !== 200 && $httpcode !== 201)) {
         return [match($httpcode) {
           429 => 'e_http_too_many_request',
